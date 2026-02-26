@@ -16,21 +16,42 @@ local HttpService = game:GetService("HttpService")
 local player = Players.LocalPlayer
 local DISCORD_LINK = "https://discord.gg/76KnzJRkKN" 
 
+local sessionid = ""
+
 -- =========================================================
--- FUNÇÃO DE CONEXÃO KEYAUTH (API SEGURA)
+-- FUNÇÕES DE CONEXÃO KEYAUTH (CORRIGIDAS)
 -- =========================================================
-local function KeyAuthRequest(method, data)
-    local url = "https://keyauth.win/api/1.1/?name="..KeyAuthApp.name.."&ownerid="..KeyAuthApp.ownerid.."&type="..method.."&"..data.."&sessionid="
+
+local function KeyAuthInit()
+    local url = "https://keyauth.win/api/1.1/?name="..KeyAuthApp.name.."&ownerid="..KeyAuthApp.ownerid.."&type=init&ver="..KeyAuthApp.version
     local s, res = pcall(function() return game:HttpGet(url) end)
-    if s then 
+    if s then
+        local success, decoded = pcall(function() return HttpService:JSONDecode(res) end)
+        if success and decoded.success then
+            sessionid = decoded.sessionid
+            return true
+        end
+    end
+    return false
+end
+
+local function KeyAuthLogin(key)
+    if sessionid == "" then KeyAuthInit() end
+    local hwid = game:GetService("RbxAnalyticsService"):GetClientId()
+    local url = "https://keyauth.win/api/1.1/?name="..KeyAuthApp.name.."&ownerid="..KeyAuthApp.ownerid.."&type=license&key="..key.."&hwid="..hwid.."&sessionid="..sessionid
+    local s, res = pcall(function() return game:HttpGet(url) end)
+    if s then
         local success, decoded = pcall(function() return HttpService:JSONDecode(res) end)
         if success then return decoded end
     end
-    return {success = false, message = "Erro de Conexão com Servidor"}
+    return {success = false, message = "Erro de Conexão"}
 end
 
+-- Tenta inicializar ao carregar o script
+task.spawn(KeyAuthInit)
+
 -- =========================================================
--- INTERFACE DE LOGIN ORIGINAL (MANTIDA)
+-- INTERFACE DE LOGIN
 -- =========================================================
 local LoginGui = Instance.new("ScreenGui")
 LoginGui.Name = "IgniteLogin"
@@ -78,7 +99,7 @@ UIS.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputT
 GetKeyBtn.Activated:Connect(function() setclipboard(DISCORD_LINK) GetKeyBtn.Text = "LINK COPIADO!" task.wait(2) GetKeyBtn.Text = "OBTER KEY" end)
 
 -- =========================================================
--- FUNÇÃO QUE LIBERA O HUB ORIGINAL (MANTIDA)
+-- FUNÇÃO QUE LIBERA O HUB
 -- =========================================================
 local function LiberarHub()
     LoginGui:Destroy()
@@ -106,7 +127,6 @@ local function LiberarHub()
     UIStroke.Color = THEME_COLOR
     UIStroke.Thickness = 2.5
 
-    -- [EFEITO RGB BORDA]
     task.spawn(function()
         local colors = {Color3.fromRGB(140, 0, 255), Color3.fromRGB(255, 0, 0), Color3.fromRGB(0, 0, 255)}
         local i = 1
@@ -171,19 +191,6 @@ local function LiberarHub()
     end)
     task.spawn(function() while task.wait(5) do checkPlayers() end end)
 
-    -- [ESTRELAS DE FUNDO]
-    local ParticleContainer = Instance.new("Frame")
-    ParticleContainer.Size = UDim2.new(1, 0, 1, 0); ParticleContainer.BackgroundTransparency = 1; ParticleContainer.Parent = MainFrame
-    local function createStar()
-        local icons = {"✦", "✧"}
-        local p = Instance.new("TextLabel")
-        p.Text = icons[math.random(1, #icons)]; p.TextColor3 = THEME_COLOR; p.BackgroundTransparency = 1
-        p.Position = UDim2.new(math.random(), 0, 1.1, 0); p.TextSize = math.random(8, 14); p.Parent = ParticleContainer
-        TweenService:Create(p, TweenInfo.new(math.random(3, 6)), {Position = UDim2.new(p.Position.X.Scale, 0, -0.2, 0), Rotation = 360, TextTransparency = 1}):Play()
-        game:GetService("Debris"):AddItem(p, 6)
-    end
-    task.spawn(function() while task.wait(0.4) do createStar() end end)
-
     -- [SIDEBAR E ABAS]
     local Sidebar = Instance.new("Frame")
     Sidebar.Size = UDim2.new(0, 100, 1, -60); Sidebar.Position = UDim2.new(0, 0, 0, 60); Sidebar.BackgroundTransparency = 1; Sidebar.Parent = MainFrame
@@ -206,18 +213,9 @@ local function LiberarHub()
     createTabBtn("Destroy", 100).Activated:Connect(function() PageMenu.Visible = false; PageVoice.Visible = false; PageDestroy.Visible = true end)
 
     -- [CONTEÚDO MENU]
-    local PlayerImg = Instance.new("ImageLabel")
-    PlayerImg.Size = UDim2.new(0, 80, 0, 80); PlayerImg.Position = UDim2.new(0, 10, 0, 10)
-    PlayerImg.Image = Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150); PlayerImg.Parent = PageMenu
-    Instance.new("UICorner", PlayerImg).CornerRadius = UDim.new(1, 0)
-
     local InfoLabel = Instance.new("TextLabel")
-    InfoLabel.Size = UDim2.new(1, -100, 0, 90); InfoLabel.Position = UDim2.new(0, 100, 0, 5)
+    InfoLabel.Size = UDim2.new(1, -20, 0, 90); InfoLabel.Position = UDim2.new(0, 10, 0, 5)
     InfoLabel.BackgroundTransparency = 1; InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255); InfoLabel.TextSize = 18; InfoLabel.Font = Enum.Font.GothamMedium; InfoLabel.TextXAlignment = Enum.TextXAlignment.Left; InfoLabel.Parent = PageMenu
-
-    local KeyLabel = Instance.new("TextLabel")
-    KeyLabel.Text = "Pressione a tecla [B] para ocultar o Menu Ignite"
-    KeyLabel.Size = UDim2.new(1, 0, 0, 60); KeyLabel.Position = UDim2.new(0, 0, 0.65, 0); KeyLabel.TextColor3 = THEME_COLOR; KeyLabel.Font = Enum.Font.GothamBold; KeyLabel.TextSize = 20; KeyLabel.BackgroundTransparency = 1; KeyLabel.TextWrapped = true; KeyLabel.Parent = PageMenu
 
     task.spawn(function()
         while task.wait(1) do
@@ -226,51 +224,20 @@ local function LiberarHub()
         end
     end)
 
-    -- [CABEÇALHO]
-    local Header = Instance.new("Frame"); Header.Size = UDim2.new(1, 0, 0, 60); Header.BackgroundTransparency = 1; Header.Parent = MainFrame
-    Instance.new("TextLabel", Header).Text = "Ignite Hub 1.0"; Header.TextLabel.Size = UDim2.new(1, 0, 0.6, 0); Header.TextLabel.TextColor3 = THEME_COLOR; Header.TextLabel.Font = Enum.Font.SpecialElite; Header.TextLabel.TextSize = 22; Header.TextLabel.BackgroundTransparency = 1
-    local Sub = Instance.new("TextLabel", Header); Sub.Text = "created by askovyx/ krazzy / surfista7"; Sub.Position = UDim2.new(0,0,0.5,0); Sub.Size = UDim2.new(1,0,0.4,0); Sub.TextColor3 = Color3.fromRGB(130,130,130); Sub.Font = Enum.Font.Code; Sub.TextSize = 10; Sub.BackgroundTransparency = 1
-
     -- [BOTÕES DE AÇÃO]
-    local AntibanBtn = Instance.new("TextButton", PageVoice); AntibanBtn.Text = "IGT ANTBAN"; AntibanBtn.Size = UDim2.new(0, 200, 0, 60); AntibanBtn.Position = UDim2.new(0.5, -100, 0.4, -30); AntibanBtn.TextColor3 = Color3.fromRGB(255, 255, 255); AntibanBtn.Font = Enum.Font.GothamBold; AntibanBtn.TextSize = 22; AntibanBtn.BackgroundTransparency = 1; Instance.new("UICorner", AntibanBtn); Instance.new("UIStroke", AntibanBtn).Color = THEME_COLOR
     local DestroyerBtn = Instance.new("TextButton", PageDestroy); DestroyerBtn.Text = "DESTROY HUB"; DestroyerBtn.Size = UDim2.new(0, 200, 0, 60); DestroyerBtn.Position = UDim2.new(0.5, -100, 0.4, -30); DestroyerBtn.TextColor3 = Color3.fromRGB(255, 255, 255); DestroyerBtn.Font = Enum.Font.GothamBold; DestroyerBtn.TextSize = 22; DestroyerBtn.BackgroundTransparency = 1; Instance.new("UICorner", DestroyerBtn); Instance.new("UIStroke", DestroyerBtn).Color = Color3.fromRGB(255, 0, 0)
-    
     DestroyerBtn.Activated:Connect(function() ScreenGui:Destroy() end)
 
-    -- [ARRASTAR E TOGGLE B]
+    -- [DRAG & TOGGLE B]
     local d, di, ds, sp
     MainFrame.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then d=true; ds=i.Position; sp=MainFrame.Position end end)
     UIS.InputChanged:Connect(function(i) if d and i.UserInputType == Enum.UserInputType.MouseMovement then local delta = i.Position-ds; MainFrame.Position = UDim2.new(sp.X.Scale, sp.X.Offset+delta.X, sp.Y.Scale, sp.Y.Offset+delta.Y) end end)
     UIS.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then d=false end end)
     UIS.InputBegan:Connect(function(i, gp) if not gp and i.KeyCode == Enum.KeyCode.B then MainFrame.Visible = not MainFrame.Visible end end)
-
-    -- [ANTIBAN ORIGINAL]
-    AntibanBtn.Activated:Connect(function()
-        MainFrame.Visible = false
-        local LF = Instance.new("Frame", ScreenGui); LF.Size = UDim2.new(0, 250, 0, 4); LF.Position = UDim2.new(0.5, -125, 0.5, 0); LF.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        local FL = Instance.new("Frame", LF); FL.Size = UDim2.new(0, 0, 1, 0); FL.BackgroundColor3 = THEME_COLOR
-        local tw = TweenService:Create(FL, TweenInfo.new(2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 1, 0)})
-        tw:Play(); tw.Completed:Connect(function()
-            LF:Destroy(); task.wait(0.2)
-            local VCS = game:GetService("VoiceChatService"); local VCI = game:GetService("VoiceChatInternal")
-            local MUTED = "rbxasset://textures/ui/VoiceChat/MicLight/Muted.png"
-            local TB = CoreGui:WaitForChild("TopBarApp"):WaitForChild("TopBarApp"):WaitForChild("UnibarLeftFrame"):WaitForChild("UnibarMenu")
-            local MC = TB:WaitForChild("2"):WaitForChild("3"); local MP = MC:FindFirstChild("toggle_mic_mute")
-            local function get_ic(b) b = b or MP; return b:WaitForChild("IntegrationIconFrame"):WaitForChild("IntegrationIcon")["1"] end
-            if not MP then VCS:joinVoice() MP = MC:WaitForChild("toggle_mic_mute") repeat task.wait(0.1) until get_ic().Image == MUTED end
-            repeat task.wait(0.1) until get_ic().Image ~= MUTED
-            local gid = VCI:GetGroupId(); VCI:JoinByGroupId(gid, true); VCS:leaveVoice(); task.wait()
-            for _=1, 4 do VCI:JoinByGroupId(gid, true) end; task.wait(5); VCS:joinVoice(); VCI:JoinByGroupId(gid, true)
-            MP.Visible = false; local nm = MP:Clone(); nm.Name = "igt_mic"; nm.Visible = true; nm.Parent = MP.Parent
-            local cm = true; local ni = get_ic(nm); local rd = nm:WaitForChild("IntegrationIconFrame"):WaitForChild("IntegrationIcon"):WaitForChild("RedVoiceDot")
-            ni.Image = MUTED; VCI:PublishPause(true)
-            nm:WaitForChild("IconHitArea_toggle_mic_mute").Activated:Connect(function() cm = not cm; VCI:PublishPause(cm); if cm then ni.Image = MUTED; rd.Visible = false else ni.Image = get_ic(MP).Image; rd.Visible = true end end)
-        end)
-    end)
 end
 
 -- =========================================================
--- LOGICA DE VERIFICAÇÃO KEYAUTH (AUTO-HWID)
+-- LOGICA DE LOGIN FINAL
 -- =========================================================
 InsertBtn.Activated:Connect(function()
     local input = KeyInput.Text:gsub("%s+", "")
@@ -279,16 +246,16 @@ InsertBtn.Activated:Connect(function()
     InsertBtn.Text = "VERIFICANDO..."; 
     InsertBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
     
-    local hwid = game:GetService("RbxAnalyticsService"):GetClientId()
-    local res = KeyAuthRequest("license", "key="..input.."&hwid="..hwid)
+    local res = KeyAuthLogin(input)
     
-    if res.success then
+    if res and res.success then
         InsertBtn.Text = "ACESSO LIBERADO!"; 
         InsertBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
         task.wait(1)
         LiberarHub()
     else
-        InsertBtn.Text = (res.message or "ERRO"):upper(); 
+        local msg = res and res.message or "ERRO"
+        InsertBtn.Text = msg:upper(); 
         InsertBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 50)
         task.wait(2)
         InsertBtn.Text = "LOGAR"; 
