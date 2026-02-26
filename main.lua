@@ -10,15 +10,16 @@ local UIS = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local Stats = game:GetService("Stats")
 local TweenService = game:GetService("TweenService")
-local CoreGui = game:GetService("CoreGui")
+local RunService = game:GetService("RunService")
 local HttpService = game:GetService("HttpService")
+local CoreGui = game:GetService("CoreGui")
 local player = Players.LocalPlayer
 local DISCORD_LINK = "https://discord.gg/76KnzJRkKN" 
 
 local sessionid = ""
 
 -- =========================================================
--- FUNÇÕES DE CONEXÃO KEYAUTH
+-- FUNÇÕES DE CONEXÃO KEYAUTH (LÓGICA DE SEGURANÇA)
 -- =========================================================
 local function KeyAuthInit()
     local url = "https://keyauth.win/api/1.1/?name="..KeyAuthApp.name.."&ownerid="..KeyAuthApp.ownerid.."&type=init&ver="..KeyAuthApp.version
@@ -39,127 +40,241 @@ local function KeyAuthLogin(key)
         local success, decoded = pcall(function() return HttpService:JSONDecode(res) end)
         if success then return decoded end
     end
-    return {success = false, message = "Erro de Conexão"}
+    return {success = false, message = "Erro de Conexao"}
 end
 
 task.spawn(KeyAuthInit)
 
 -- =========================================================
--- INTERFACE DE LOGIN
+-- INTERFACE DE LOGIN (ESTILO IGNITE ORIGINAL)
 -- =========================================================
 local LoginGui = Instance.new("ScreenGui")
 LoginGui.Name = "IgniteLogin"; LoginGui.Parent = CoreGui; LoginGui.ResetOnSpawn = false
 
 local LoginFrame = Instance.new("Frame")
-LoginFrame.Size = UDim2.new(0, 320, 0, 200); LoginFrame.Position = UDim2.new(0.5, -160, 0.5, -100)
-LoginFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 15); LoginFrame.Parent = LoginGui
+LoginFrame.Size = UDim2.new(0, 350, 0, 250) -- Tamanho corrigido (legível)
+LoginFrame.Position = UDim2.new(0.5, -175, 0.5, -125)
+LoginFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+LoginFrame.Parent = LoginGui
 Instance.new("UICorner", LoginFrame)
-local LS = Instance.new("UIStroke", LoginFrame); LS.Color = Color3.fromRGB(140, 0, 255); LS.Thickness = 2.5
+local LStroke = Instance.new("UIStroke", LoginFrame); LStroke.Color = Color3.fromRGB(140, 0, 255); LStroke.Thickness = 2.5
 
-local LTitle = Instance.new("TextLabel")
-LTitle.Text = "IGNITE HUB | LOGIN"; LTitle.Size = UDim2.new(1, 0, 0, 50); LTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-LTitle.Font = Enum.Font.GothamBold; LTitle.BackgroundTransparency = 1; LTitle.Parent = LoginFrame
+-- Título Login
+local LTitle = Instance.new("TextLabel", LoginFrame)
+LTitle.Text = "IGNITE HUB | LOGIN"; LTitle.Size = UDim2.new(1, 0, 0, 60)
+LTitle.TextColor3 = Color3.fromRGB(255, 255, 255); LTitle.Font = Enum.Font.GothamBold; LTitle.TextSize = 20; LTitle.BackgroundTransparency = 1
 
-local KeyInput = Instance.new("TextBox")
-KeyInput.Size = UDim2.new(0, 260, 0, 40); KeyInput.Position = UDim2.new(0.5, -130, 0.4, 0)
+-- Input de Key
+local KeyInput = Instance.new("TextBox", LoginFrame)
+KeyInput.Size = UDim2.new(0, 280, 0, 45); KeyInput.Position = UDim2.new(0.5, -140, 0.4, 0)
 KeyInput.BackgroundColor3 = Color3.fromRGB(20, 20, 30); KeyInput.PlaceholderText = "Insira sua Key..."
-KeyInput.Text = ""; KeyInput.TextColor3 = Color3.fromRGB(255, 255, 255); KeyInput.Parent = LoginFrame
+KeyInput.Text = ""; KeyInput.TextColor3 = Color3.fromRGB(255, 255, 255); KeyInput.Font = Enum.Font.Gotham; KeyInput.TextSize = 16
 Instance.new("UICorner", KeyInput)
 
-local InsertBtn = Instance.new("TextButton")
-InsertBtn.Text = "LOGAR"; InsertBtn.Size = UDim2.new(0, 125, 0, 40); InsertBtn.Position = UDim2.new(0.5, -130, 0.7, 0)
-InsertBtn.BackgroundColor3 = Color3.fromRGB(140, 0, 255); InsertBtn.TextColor3 = Color3.fromRGB(255, 255, 255); InsertBtn.Parent = LoginFrame
+-- Botões de Login
+local InsertBtn = Instance.new("TextButton", LoginFrame)
+InsertBtn.Text = "LOGAR"; InsertBtn.Size = UDim2.new(0, 135, 0, 45); InsertBtn.Position = UDim2.new(0.5, -140, 0.7, 0)
+InsertBtn.BackgroundColor3 = Color3.fromRGB(140, 0, 255); InsertBtn.TextColor3 = Color3.fromRGB(255, 255, 255); InsertBtn.Font = Enum.Font.GothamBold
 Instance.new("UICorner", InsertBtn)
 
-local GetKeyBtn = Instance.new("TextButton")
-GetKeyBtn.Text = "OBTER KEY"; GetKeyBtn.Size = UDim2.new(0, 125, 0, 40); GetKeyBtn.Position = UDim2.new(0.5, 5, 0.7, 0)
-GetKeyBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 50); GetKeyBtn.TextColor3 = Color3.fromRGB(255, 255, 255); GetKeyBtn.Parent = LoginFrame
+local GetKeyBtn = Instance.new("TextButton", LoginFrame)
+GetKeyBtn.Text = "OBTER KEY"; GetKeyBtn.Size = UDim2.new(0, 135, 0, 45); GetKeyBtn.Position = UDim2.new(0.5, 5, 0.7, 0)
+GetKeyBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 50); GetKeyBtn.TextColor3 = Color3.fromRGB(255, 255, 255); GetKeyBtn.Font = Enum.Font.GothamBold
 Instance.new("UICorner", GetKeyBtn)
+
+-- Draggable Login (RESTAURADO)
+local d1, di1, ds1, sp1
+LoginFrame.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then d1 = true; ds1 = input.Position; sp1 = LoginFrame.Position end end)
+UIS.InputChanged:Connect(function(input) if d1 and input.UserInputType == Enum.UserInputType.MouseMovement then local delta = input.Position - ds1; LoginFrame.Position = UDim2.new(sp1.X.Scale, sp1.X.Offset + delta.X, sp1.Y.Scale, sp1.Y.Offset + delta.Y) end end)
+UIS.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then d1 = false end end)
 
 GetKeyBtn.Activated:Connect(function() setclipboard(DISCORD_LINK) GetKeyBtn.Text = "LINK COPIADO!"; task.wait(2) GetKeyBtn.Text = "OBTER KEY" end)
 
 -- =========================================================
--- FUNÇÃO QUE LIBERA O HUB (TUDO RESTAURADO)
+-- FUNÇÃO QUE LIBERA O HUB (SEU CÓDIGO ORIGINAL INTEGRAL)
 -- =========================================================
 local function LiberarHub()
     LoginGui:Destroy()
+    
     local THEME_COLOR = Color3.fromRGB(140, 0, 255)
+    local BG_COLOR = Color3.fromRGB(10, 10, 15)
+    local ACCENT_COLOR = Color3.fromRGB(25, 25, 35)
+
     player:SetAttribute("IsIgniteUser", true)
 
     local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "IgniteHub_Main"; ScreenGui.Parent = CoreGui; ScreenGui.ResetOnSpawn = false
+    ScreenGui.Name = "IgniteHub_v1"; ScreenGui.Parent = CoreGui; ScreenGui.ResetOnSpawn = false
 
     local MainFrame = Instance.new("Frame")
-    MainFrame.Size = UDim2.new(0, 420, 0, 320); MainFrame.Position = UDim2.new(0.5, -210, 0.5, -160)
-    MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 15); MainFrame.ClipsDescendants = true; MainFrame.Parent = ScreenGui
-    Instance.new("UICorner", MainFrame)
-    local Stroke = Instance.new("UIStroke", MainFrame); Stroke.Color = THEME_COLOR; Stroke.Thickness = 2.5
+    MainFrame.Size = UDim2.new(0, 420, 0, 300); MainFrame.Position = UDim2.new(0.5, -210, 0.5, -150)
+    MainFrame.BackgroundColor3 = BG_COLOR; MainFrame.BorderSizePixel = 0; MainFrame.ClipsDescendants = true; MainFrame.Parent = ScreenGui
+    Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+    local UIStroke = Instance.new("UIStroke", MainFrame); UIStroke.Color = THEME_COLOR; UIStroke.Thickness = 2.5
 
-    -- [PARTÍCULAS / ESTRELAS]
+    -- RGB LENTO
+    task.spawn(function()
+        local colors = {Color3.fromRGB(140, 0, 255), Color3.fromRGB(255, 0, 0), Color3.fromRGB(0, 0, 255)}
+        local i = 1
+        while true do
+            local nextColor = colors[i % #colors + 1]
+            local tween = TweenService:Create(UIStroke, TweenInfo.new(4, Enum.EasingStyle.Linear), {Color = nextColor})
+            tween:Play(); tween.Completed:Wait(); i = i + 1
+        end
+    end)
+
+    -- SISTEMA DE TAGS IGT USER 2.0
+    local function createIgniteTag(targetPlayer)
+        local function applyTag()
+            local char = targetPlayer.Character
+            if char then
+                local head = char:WaitForChild("Head", 5)
+                if head and not head:FindFirstChild("IgniteTag") then
+                    local tag = Instance.new("BillboardGui")
+                    tag.Name = "IgniteTag"; tag.Size = UDim2.new(0, 250, 0, 70); tag.AlwaysOnTop = true; tag.ExtentsOffset = Vector3.new(0, 3.5, 0); tag.Parent = head
+                    local container = Instance.new("Frame")
+                    container.Size = UDim2.new(0.9, 0, 0.6, 0); container.Position = UDim2.new(0.05, 0, 0.2, 0); container.BackgroundColor3 = Color3.fromRGB(15, 0, 30); container.BackgroundTransparency = 0.2; container.ClipsDescendants = true; container.Parent = tag
+                    Instance.new("UICorner", container).CornerRadius = UDim.new(0, 8); Instance.new("UIStroke", container).Color = THEME_COLOR
+                    
+                    task.spawn(function()
+                        while tag.Parent do
+                            local p = Instance.new("TextLabel")
+                            p.Text = "✧"; p.TextColor3 = THEME_COLOR; p.BackgroundTransparency = 1; p.Size = UDim2.new(0, 10, 0, 10); p.Position = UDim2.new(math.random(), 0, 1, 0); p.Parent = container
+                            TweenService:Create(p, TweenInfo.new(math.random(2,4)), {Position = UDim2.new(p.Position.X.Scale, 0, -0.5, 0), TextTransparency = 1}):Play()
+                            game:GetService("Debris"):AddItem(p, 4); task.wait(0.6)
+                        end
+                    end)
+                    local textLabel = Instance.new("TextLabel")
+                    textLabel.Size = UDim2.new(1, 0, 1, 0); textLabel.BackgroundTransparency = 1; textLabel.TextColor3 = Color3.fromRGB(255, 255, 255); textLabel.Font = Enum.Font.GothamBold; textLabel.TextSize = 18; textLabel.Parent = container
+                    task.spawn(function()
+                        local fullText = "IGT USER: " .. targetPlayer.DisplayName
+                        while tag.Parent do
+                            for i = 1, #fullText do textLabel.Text = string.sub(fullText, 1, i) .. "_"; task.wait(0.1) end
+                            task.wait(1.5)
+                            for i = #fullText, 0, -1 do textLabel.Text = string.sub(fullText, 1, i) .. "_"; task.wait(0.05) end
+                            task.wait(0.5)
+                        end
+                    end)
+                end
+            end
+        end
+        applyTag(); targetPlayer.CharacterAdded:Connect(applyTag)
+    end
+
+    local function checkPlayers() for _, p in pairs(Players:GetPlayers()) do if p:GetAttribute("IsIgniteUser") then createIgniteTag(p) end end end
+    Players.PlayerAdded:Connect(function(p) p:GetAttributeChangedSignal("IsIgniteUser"):Connect(function() if p:GetAttribute("IsIgniteUser") then createIgniteTag(p) end end) end)
+    task.spawn(function() while task.wait(5) do checkPlayers() end end)
+
+    -- ESTRELAS DE FUNDO
     local ParticleContainer = Instance.new("Frame")
     ParticleContainer.Size = UDim2.new(1, 0, 1, 0); ParticleContainer.BackgroundTransparency = 1; ParticleContainer.Parent = MainFrame
     task.spawn(function()
         while MainFrame.Parent do
+            local icons = {"✦", "✧"}
             local p = Instance.new("TextLabel")
-            p.Text = math.random() > 0.5 and "✦" or "✧"; p.TextColor3 = THEME_COLOR; p.BackgroundTransparency = 1
+            p.Text = icons[math.random(1, #icons)]; p.TextColor3 = THEME_COLOR; p.BackgroundTransparency = 1
             p.Position = UDim2.new(math.random(), 0, 1.1, 0); p.TextSize = math.random(8, 14); p.Parent = ParticleContainer
             TweenService:Create(p, TweenInfo.new(math.random(3, 6)), {Position = UDim2.new(p.Position.X.Scale, 0, -0.2, 0), Rotation = 360, TextTransparency = 1}):Play()
             game:GetService("Debris"):AddItem(p, 6); task.wait(0.4)
         end
     end)
 
-    -- [CABEÇALHO]
-    local Header = Instance.new("Frame"); Header.Size = UDim2.new(1, 0, 0, 60); Header.BackgroundTransparency = 1; Header.Parent = MainFrame
-    local Title = Instance.new("TextLabel", Header); Title.Text = "Ignite Hub 1.0"; Title.Size = UDim2.new(1, 0, 0.6, 0); Title.TextColor3 = THEME_COLOR; Title.Font = Enum.Font.SpecialElite; Title.TextSize = 24; Title.BackgroundTransparency = 1
-    local Sub = Instance.new("TextLabel", Header); Sub.Text = "created by askovyx / krazzy / surfista7"; Sub.Position = UDim2.new(0,0,0.6,0); Sub.Size = UDim2.new(1,0,0.4,0); Sub.TextColor3 = Color3.fromRGB(130,130,130); Sub.Font = Enum.Font.Code; Sub.TextSize = 10; Sub.BackgroundTransparency = 1
-
-    -- [SIDEBAR]
-    local Sidebar = Instance.new("Frame"); Sidebar.Size = UDim2.new(0, 100, 1, -70); Sidebar.Position = UDim2.new(0, 5, 0, 65); Sidebar.BackgroundTransparency = 1; Sidebar.Parent = MainFrame
-    local TabContainer = Instance.new("Frame"); TabContainer.Size = UDim2.new(1, -120, 1, -80); TabContainer.Position = UDim2.new(0, 110, 0, 70); TabContainer.BackgroundTransparency = 1; TabContainer.Parent = MainFrame
+    -- SIDEBAR E TABS
+    local Sidebar = Instance.new("Frame")
+    Sidebar.Size = UDim2.new(0, 100, 1, -60); Sidebar.Position = UDim2.new(0, 0, 0, 60); Sidebar.BackgroundTransparency = 1; Sidebar.Parent = MainFrame
+    local TabContainer = Instance.new("Frame")
+    TabContainer.Size = UDim2.new(1, -110, 1, -70); TabContainer.Position = UDim2.new(0, 105, 0, 65); TabContainer.BackgroundTransparency = 1; TabContainer.Parent = MainFrame
 
     local PageMenu = Instance.new("Frame", TabContainer); PageMenu.Size = UDim2.new(1, 0, 1, 0); PageMenu.BackgroundTransparency = 1
     local PageVoice = Instance.new("Frame", TabContainer); PageVoice.Size = UDim2.new(1, 0, 1, 0); PageVoice.BackgroundTransparency = 1; PageVoice.Visible = false
     local PageDestroy = Instance.new("Frame", TabContainer); PageDestroy.Size = UDim2.new(1, 0, 1, 0); PageDestroy.BackgroundTransparency = 1; PageDestroy.Visible = false
 
-    local function createTab(name, page, pos)
-        local b = Instance.new("TextButton", Sidebar); b.Size = UDim2.new(1, 0, 0, 35); b.Position = UDim2.new(0, 0, 0, pos); b.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-        b.Text = name; b.TextColor3 = Color3.fromRGB(255, 255, 255); b.Font = Enum.Font.GothamMedium; Instance.new("UICorner", b)
-        b.Activated:Connect(function() PageMenu.Visible = false; PageVoice.Visible = false; PageDestroy.Visible = false; page.Visible = true end)
+    local function createTabBtn(name, pos)
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(0.9, 0, 0, 35); btn.Position = UDim2.new(0.05, 0, 0, pos); btn.BackgroundColor3 = ACCENT_COLOR; btn.Text = name; btn.Font = Enum.Font.GothamMedium; btn.TextColor3 = Color3.fromRGB(255, 255, 255); btn.TextSize = 17; btn.Parent = Sidebar
+        Instance.new("UICorner", btn); return btn
     end
-    createTab("Menu", PageMenu, 0); createTab("Voice", PageVoice, 45); createTab("Destroy", PageDestroy, 90)
 
-    -- [PÁGINA MENU (ÍCONE RESTAURADO)]
-    local PlayerImg = Instance.new("ImageLabel", PageMenu); PlayerImg.Size = UDim2.new(0, 70, 0, 70); PlayerImg.Position = UDim2.new(0, 5, 0, 5)
-    pcall(function() PlayerImg.Image = Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150) end)
+    createTabBtn("Menu", 10).Activated:Connect(function() PageVoice.Visible = false; PageDestroy.Visible = false; PageMenu.Visible = true end)
+    createTabBtn("Voice", 55).Activated:Connect(function() PageMenu.Visible = false; PageDestroy.Visible = false; PageVoice.Visible = true end)
+    createTabBtn("Destroy", 100).Activated:Connect(function() PageMenu.Visible = false; PageVoice.Visible = false; PageDestroy.Visible = true end)
+
+    -- CABEÇALHO
+    local Header = Instance.new("Frame", MainFrame); Header.Size = UDim2.new(1, 0, 0, 60); Header.BackgroundTransparency = 1
+    local Title = Instance.new("TextLabel", Header); Title.Text = "Ignite Hub 1.0"; Title.Size = UDim2.new(1, 0, 0.6, 0); Title.TextColor3 = THEME_COLOR; Title.Font = Enum.Font.SpecialElite; Title.TextSize = 22; Title.BackgroundTransparency = 1
+    local Subtitle = Instance.new("TextLabel", Header); Subtitle.Text = "created by askovyx/ krazzy / surfista7"; Subtitle.Position = UDim2.new(0, 0, 0.5, 0); Subtitle.Size = UDim2.new(1, 0, 0.4, 0); Subtitle.TextColor3 = Color3.fromRGB(130, 130, 130); Subtitle.Font = Enum.Font.Code; Subtitle.TextSize = 10; Subtitle.BackgroundTransparency = 1
+
+    -- CONTEÚDO MENU
+    local PlayerImg = Instance.new("ImageLabel", PageMenu); PlayerImg.Size = UDim2.new(0, 80, 0, 80); PlayerImg.Position = UDim2.new(0, 10, 0, 10); PlayerImg.Image = Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
     Instance.new("UICorner", PlayerImg).CornerRadius = UDim.new(1, 0)
+    local InfoLabel = Instance.new("TextLabel", PageMenu); InfoLabel.Size = UDim2.new(1, -100, 0, 90); InfoLabel.Position = UDim2.new(0, 100, 0, 5); InfoLabel.BackgroundTransparency = 1; InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255); InfoLabel.TextSize = 18; InfoLabel.Font = Enum.Font.GothamMedium; InfoLabel.TextXAlignment = 0
+    local KeyLabel = Instance.new("TextLabel", PageMenu); KeyLabel.Text = "Pressione a tecla [B] para ocultar o Menu Ignite"; KeyLabel.Size = UDim2.new(1, 0, 0, 60); KeyLabel.Position = UDim2.new(0, 0, 0.65, 0); KeyLabel.TextColor3 = THEME_COLOR; KeyLabel.Font = Enum.Font.GothamBold; KeyLabel.TextSize = 20; KeyLabel.BackgroundTransparency = 1; KeyLabel.TextWrapped = true
 
-    local InfoLabel = Instance.new("TextLabel", PageMenu); InfoLabel.Size = UDim2.new(1, -85, 0, 70); InfoLabel.Position = UDim2.new(0, 85, 0, 5)
-    InfoLabel.BackgroundTransparency = 1; InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255); InfoLabel.TextXAlignment = 0; InfoLabel.Font = Enum.Font.Gotham; InfoLabel.TextSize = 14
-    task.spawn(function() while task.wait(1) do InfoLabel.Text = "User: "..player.DisplayName.."\nPing: "..math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue()).."ms\nPlayers: "..#Players:GetPlayers() end end)
+    task.spawn(function() while task.wait(1) do InfoLabel.Text = "User: " .. player.DisplayName .. "\nPing: " .. math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue()) .. "ms\nOnline: " .. #Players:GetPlayers() end end)
 
-    local BLabel = Instance.new("TextLabel", PageMenu); BLabel.Text = "Pressione [B] para ocultar"; BLabel.Size = UDim2.new(1,0,0,30); BLabel.Position = UDim2.new(0,0,0.8,0); BLabel.BackgroundTransparency = 1; BLabel.TextColor3 = THEME_COLOR; BLabel.Font = Enum.Font.GothamBold
-
-    -- [BOTÃO VOICE (ANTIBAN RESTAURADO)]
-    local AntibanBtn = Instance.new("TextButton", PageVoice); AntibanBtn.Text = "IGT ANTBAN"; AntibanBtn.Size = UDim2.new(0, 180, 0, 50); AntibanBtn.Position = UDim2.new(0.5, -90, 0.4, -25); AntibanBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 30); AntibanBtn.TextColor3 = Color3.fromRGB(255, 255, 255); AntibanBtn.Font = Enum.Font.GothamBold; AntibanBtn.TextSize = 18; Instance.new("UICorner", AntibanBtn); local st = Instance.new("UIStroke", AntibanBtn); st.Color = THEME_COLOR
-    AntibanBtn.Activated:Connect(function() 
-        AntibanBtn.Text = "EXECUTANDO..."; task.wait(1.5)
-        -- Aqui você cola o seu script de Antiban original se quiser, ou deixa a função visual
-        AntibanBtn.Text = "ANTIBAN ATIVO!"; AntibanBtn.TextColor3 = Color3.fromRGB(0, 255, 150)
-    end)
-
-    -- [BOTÃO DESTROY]
-    local DestBtn = Instance.new("TextButton", PageDestroy); DestBtn.Text = "FECHAR TUDO"; DestBtn.Size = UDim2.new(0, 180, 0, 50); DestBtn.Position = UDim2.new(0.5, -90, 0.4, -25); DestBtn.BackgroundColor3 = Color3.fromRGB(50, 0, 0); DestBtn.TextColor3 = Color3.fromRGB(255, 255, 255); DestBtn.Font = Enum.Font.GothamBold; Instance.new("UICorner", DestBtn)
-    DestBtn.Activated:Connect(function() ScreenGui:Destroy() end)
-
-    -- [DRAG]
-    local d, ds, sp; MainFrame.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then d=true; ds=i.Position; sp=MainFrame.Position end end)
-    UIS.InputChanged:Connect(function(i) if d and i.UserInputType == Enum.UserInputType.MouseMovement then local delta = i.Position-ds; MainFrame.Position = UDim2.new(sp.X.Scale, sp.X.Offset+delta.X, sp.Y.Scale, sp.Y.Offset+delta.Y) end end)
-    UIS.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then d=false end end)
+    -- ARRASTAR E TOGGLE (RESTAURADO)
+    local d2, di2, ds2, sp2; MainFrame.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then d2 = true; ds2 = input.Position; sp2 = MainFrame.Position end end)
+    UIS.InputChanged:Connect(function(input) if d2 and input.UserInputType == Enum.UserInputType.MouseMovement then local delta = input.Position - ds2; MainFrame.Position = UDim2.new(sp2.X.Scale, sp2.X.Offset + delta.X, sp2.Y.Scale, sp2.Y.Offset + delta.Y) end end)
+    UIS.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then d2 = false end end)
     UIS.InputBegan:Connect(function(i, gp) if not gp and i.KeyCode == Enum.KeyCode.B then MainFrame.Visible = not MainFrame.Visible end end)
+
+    -- ANTIBAN BUTTON
+    local AntibanBtn = Instance.new("TextButton", PageVoice); AntibanBtn.Text = "IGT ANTBAN"; AntibanBtn.Size = UDim2.new(0, 200, 0, 60); AntibanBtn.Position = UDim2.new(0.5, -100, 0.4, -30); AntibanBtn.TextColor3 = Color3.fromRGB(255, 255, 255); AntibanBtn.Font = Enum.Font.GothamBold; AntibanBtn.TextSize = 22; AntibanBtn.BackgroundTransparency = 1
+    Instance.new("UICorner", AntibanBtn); Instance.new("UIStroke", AntibanBtn).Color = THEME_COLOR
+
+    -- DESTROYER BUTTON
+    local DestroyerBtn = Instance.new("TextButton", PageDestroy); DestroyerBtn.Text = "DESTROY HUB"; DestroyerBtn.Size = UDim2.new(0, 200, 0, 60); DestroyerBtn.Position = UDim2.new(0.5, -100, 0.4, -30); DestroyerBtn.TextColor3 = Color3.fromRGB(255, 255, 255); DestroyerBtn.Font = Enum.Font.GothamBold; DestroyerBtn.TextSize = 22; DestroyerBtn.BackgroundTransparency = 1
+    Instance.new("UICorner", DestroyerBtn); Instance.new("UIStroke", DestroyerBtn).Color = Color3.fromRGB(255, 0, 0)
+    DestroyerBtn.Activated:Connect(function() ScreenGui:Destroy() end)
+
+    -- LÓGICA ANTIBAN (LÓGICA ORIGINAL RESTAURADA)
+    AntibanBtn.Activated:Connect(function()
+        local LoadingFrame = Instance.new("Frame", ScreenGui); LoadingFrame.Size = UDim2.new(0, 250, 0, 4); LoadingFrame.Position = UDim2.new(0.5, -125, 0.5, 0); LoadingFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+        local Fill = Instance.new("Frame", LoadingFrame); Fill.Size = UDim2.new(0, 0, 1, 0); Fill.BackgroundColor3 = THEME_COLOR
+        MainFrame.Visible = false
+        local lt = TweenService:Create(Fill, TweenInfo.new(2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 1, 0)})
+        lt:Play()
+        lt.Completed:Connect(function()
+            task.wait(0.2); LoadingFrame:Destroy(); MainFrame.Visible = true
+            -- INICIO DO SCRIPT DE VOICE ANTIBAN
+            local VoiceChatService = game:GetService("VoiceChatService")
+            local VoiceChatInternal = game:GetService("VoiceChatInternal")
+            local MUTED_IMAGE = "rbxasset://textures/ui/VoiceChat/MicLight/Muted.png"
+            local TopBarApp = CoreGui:WaitForChild("TopBarApp"):WaitForChild("TopBarApp")
+            local UnibarMenu = TopBarApp:WaitForChild("UnibarLeftFrame"):WaitForChild("UnibarMenu")
+            local MicContainer = UnibarMenu:WaitForChild("2"):WaitForChild("3")
+            local MicPath = MicContainer:FindFirstChild("toggle_mic_mute")
+            
+            local function get_mic_icon(micButton) micButton = micButton or MicPath; return micButton:WaitForChild("IntegrationIconFrame"):WaitForChild("IntegrationIcon")["1"] end
+            local function is_muted() return get_mic_icon().Image == MUTED_IMAGE end
+            
+            if not MicPath then VoiceChatService:joinVoice() MicPath = MicContainer:WaitForChild("toggle_mic_mute") end
+            
+            local groupId = VoiceChatInternal:GetGroupId()
+            VoiceChatInternal:JoinByGroupId(groupId, true)
+            VoiceChatService:leaveVoice()
+            task.wait()
+            for _ = 1, 4 do VoiceChatInternal:JoinByGroupId(groupId, true) end
+            task.wait(5)
+            VoiceChatService:joinVoice()
+            VoiceChatInternal:JoinByGroupId(groupId, true)
+            
+            MicPath.Visible = false
+            local newMic = MicPath:Clone(); newMic.Name = "toggle_mic_mute_new"; newMic.Visible = true; newMic.Parent = MicPath.Parent
+            local nIcon = get_mic_icon(newMic); local oIcon = get_mic_icon(MicPath); local rDot = newMic:WaitForChild("IntegrationIconFrame"):WaitForChild("IntegrationIcon"):WaitForChild("RedVoiceDot")
+            nIcon.Image = MUTED_IMAGE; VoiceChatInternal:PublishPause(true)
+            local CurrentlyMuted = true
+            newMic:WaitForChild("IconHitArea_toggle_mic_mute").Activated:Connect(function()
+                CurrentlyMuted = not CurrentlyMuted
+                VoiceChatInternal:PublishPause(CurrentlyMuted)
+                nIcon.Image = CurrentlyMuted and MUTED_IMAGE or oIcon.Image
+                rDot.Visible = not CurrentlyMuted
+            end)
+        end)
+    end)
 end
 
 -- =========================================================
--- LOGICA DE LOGIN
+-- LOGICA FINAL DE LOGIN
 -- =========================================================
 InsertBtn.Activated:Connect(function()
     local input = KeyInput.Text:gsub("%s+", "")
@@ -167,10 +282,8 @@ InsertBtn.Activated:Connect(function()
     InsertBtn.Text = "VERIFICANDO..."; InsertBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
     local res = KeyAuthLogin(input)
     if res and res.success then
-        InsertBtn.Text = "ACESSO LIBERADO!"; InsertBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
-        task.wait(1); LiberarHub()
+        InsertBtn.Text = "SUCESSO!"; task.wait(0.5); LiberarHub()
     else
-        InsertBtn.Text = (res and res.message or "ERRO"):upper(); InsertBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 50)
-        task.wait(2); InsertBtn.Text = "LOGAR"; InsertBtn.BackgroundColor3 = Color3.fromRGB(140, 0, 255)
+        InsertBtn.Text = (res and res.message or "ERRO"):upper(); task.wait(2); InsertBtn.Text = "LOGAR"; InsertBtn.BackgroundColor3 = Color3.fromRGB(140, 0, 255)
     end
 end)
